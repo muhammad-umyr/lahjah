@@ -1,0 +1,34 @@
+# Feature 11 — Copy Team Resubmit Notification
+
+## Goal
+When a designer resubmits a request after making changes, notify 
+all Copy Team members so they know it's ready for re-review.
+
+## Problem
+Currently createNotification() is called when a designer resubmits 
+in generate/page.tsx but it may not be sending to Copy Team members 
+correctly. Copy Team has no way of knowing a designer has resubmitted.
+
+## Fix Required
+1. When a designer resubmits a request (status changes to 
+   'submitted' or 'in_review' after being 'changes_requested'):
+   - Query Firestore for all users where role == 'copy_team'
+   - Create a notification for each Copy Team member with:
+     - message: "'{request title}' has been resubmitted and is 
+       ready for review"
+     - requestId: the request ID
+     - read: false
+     - createdAt: timestamp
+     - type: 'resubmitted'
+
+2. Make sure the notification links correctly to the request 
+   in the Copy Team review view
+
+## Where to Make the Change
+- Find where the designer submits/resubmits in the codebase
+  (likely generate/page.tsx or dashboard/[id]/page.tsx)
+- Add the Copy Team notification logic there
+
+## After Changes
+- Run npm run build to verify no errors
+- Commit and push

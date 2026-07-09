@@ -1,0 +1,62 @@
+# Feature 13 — Request Creation & Dashboard Enhancements
+
+## Goal
+Improve the request creation flow and dashboard with better 
+usability for designers and copy team.
+
+## 1. Drag and Drop Image Upload on Request Creation
+- Add drag and drop zone to the screenshot upload area on the 
+  new request page
+- When user drags images over the upload area, show a visual 
+  highlight with "Drop images here" text
+- When dropped, add images to the existing upload queue
+- Support multiple images dropped at once
+- Keep existing click-to-upload button working
+- Only accept image files (PNG, JPG, WEBP)
+- Show error if non-image file is dropped: 
+  "Only image files are supported"
+- Also support paste from clipboard (Cmd+V) to attach images
+
+## 2. Copy Suggestions with One Click
+- Add a copy icon button next to each generated copy suggestion
+- Clicking it copies the text to clipboard
+- Show a brief confirmation: "Copied!" that disappears after 
+  2 seconds
+- Apply to both English and Arabic suggestions
+- This lets designers paste directly into Figma without 
+  manually selecting text
+
+## 3. Keep Initial Copy Option
+- When a designer regenerates a copy suggestion, keep the 
+  previous suggestion visible as an option
+- Show it as a "Previous suggestion" card below the new one
+- Designer can select either the new or previous suggestion
+- This way if none of the AI suggestions are good, the designer 
+  can type their own copy in a text input and submit that instead
+- Add a "Write my own" option per annotation that reveals a 
+  text input for custom copy
+- Custom copy should be submitted as-is for review
+
+## 4. Multiple String Selection for Review
+- Allow designers to select multiple copy strings at once
+- Add a checkbox to each copy string row
+- Add a "Select all" option at the top
+- When strings are selected, show a bulk action bar:
+  "X strings selected — Submit selected for review"
+- This lets designers submit only the strings they are 
+  happy with, not the entire request at once
+
+## 5. Request Dashboard — Requester and Assignee Info
+- On each request card in the dashboard show:
+  - "Raised by: [displayName or email]" 
+  - For Copy Team view: show who submitted it
+  - For Designer view: show which Copy Team member last 
+    reviewed it (if any)
+- On the request detail page, show the same info in the header
+- Pull displayName from the users Firestore collection using 
+  the uid stored on the request
+
+## After Changes
+- Run npm run build to verify no errors
+- Update CLAUDE.md
+- Commit and push

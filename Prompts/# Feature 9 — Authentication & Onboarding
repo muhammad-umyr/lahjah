@@ -1,0 +1,85 @@
+# Feature 9 — Authentication & Onboarding
+
+## Goal
+Allow users to sign in and create accounts using email/password, 
+and select their role during onboarding. Google Sign-In will be 
+added later once OKTA approval is confirmed.
+
+## Sign-In Flow
+1. User lands on the login page
+2. Email and password fields
+3. "Sign in" button (yellow #FFEA00, #222629 text)
+4. Toggle to "Create account" mode for new users
+5. After successful sign-in:
+   - If first time user → redirect to /onboarding
+   - If returning user → redirect to /dashboard
+
+## Create Account Flow
+1. Email input
+2. Password input
+3. Confirm password input
+4. "Create account" button (yellow #FFEA00)
+5. On success: create Firestore profile, redirect to /onboarding
+
+## Onboarding Flow (First-Time Users)
+- Welcome screen with role selection
+- "Welcome to Lahjah!"
+- Subtext: "Tell us what you do so we can set up your workspace."
+- Role selection (large card buttons, single select):
+
+  DESIGNER card:
+  - Title: "Designer"
+  - Description: "Create copy requests, generate copy, and submit 
+    for review."
+
+  COPY TEAM card:
+  - Title: "Copy Team"
+  - Description: "Review copy requests, leave feedback, and approve 
+    submissions."
+
+- "Get started" button — yellow #FFEA00, disabled until role selected
+- On continue: save role to Firestore, redirect to /dashboard
+
+## Data Structure
+On first sign-up, create Firestore document under users/{uid}:
+- uid (Firebase Auth UID)
+- email
+- role ("designer" | "copy_team")
+- createdAt (timestamp)
+- onboardingCompleted (boolean — true after role selected)
+
+## Auth Guard Behavior
+- All protected pages check for valid auth
+- If signed in but onboardingCompleted is false → redirect to /onboarding
+- If signed in and onboardingCompleted is true → allow access by role
+
+## Firestore Security Rules
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId} {
+      allow read, write: if request.auth != null 
+        && request.auth.uid == userId;
+    }
+    match /requests/{requestId} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
+
+## UI
+- Login page: animated gradient background + floating Arabic letters
+- Centered white card
+- Lahjah logo in Noto Kufi Arabic Bold above the card
+- Selected role card: #222629 black border, white background
+- "Get started" CTA: yellow #FFEA00, #222629 text
+
+## Future: Google Sign-In
+// TODO: Replace email/password with Google Sign-In after OKTA approval
+// Use signInWithRedirect + getRedirectResult (NOT signInWithPopup)
+// Restrict to @hungerstation.com domain only
+
+## After Changes
+- Run npm run build to verify no errors
+- Update CLAUDE.md to reflect email/password auth
+- Commit and push

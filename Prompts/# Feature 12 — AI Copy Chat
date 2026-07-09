@@ -1,0 +1,97 @@
+# Feature 12 — AI Copy Chat
+
+## Goal
+A dedicated conversational AI assistant at /chat that lets any 
+Lahjah user get quick copy suggestions by describing their need 
+or uploading a screenshot — without going through the full 
+structured request workflow.
+
+## Context
+Designers often need quick copy variations for UI elements while 
+working in Figma. Instead of switching to ChatGPT, they can use 
+Lahjah's chat which understands HungerStation's brand voice and 
+copy guidelines.
+
+## Access
+- Available to both Designers and Copy Team
+- Requires authentication (auth-guarded like all other pages)
+- Accessible via /chat route
+- Add "Chat" link in the main navigation
+
+## UI Layout
+- Full page chat interface at /chat
+- Left sidebar (if space allows): list of past conversations
+  - Each conversation shows first message as title + date
+  - "New chat" button at the top of sidebar
+  - Click conversation to load it
+- Main area: chat window
+  - Messages displayed in bubbles (user right, AI left)
+  - User bubbles: #222629 background, white text
+  - AI bubbles: white background, #222629 text, subtle border
+  - Timestamps on each message
+  - If an image was uploaded, show thumbnail in the message bubble
+- Bottom input area:
+  - Text input field: "Ask Lahjah anything about copy..."
+  - Image upload button (paperclip or image icon)
+  - Language toggle: EN / AR (defaults to EN)
+  - Send button (yellow #FFEA00, #222629 text)
+  - Pressing Enter sends the message
+
+## Image Upload
+- User can attach one image per message (Figma screenshot etc.)
+- Accepted formats: PNG, JPG, WEBP
+- Image is sent to the AI as context alongside the text prompt
+- Show image preview in the input area before sending
+- Use existing Firebase Storage for image uploads
+- Store image URL in the message document in Firestore
+
+## AI Behavior
+- Use the existing Anthropic API (same as copy generation)
+- System prompt:
+  "You are Lahjah, an AI copy assistant for HungerStation's 
+  product and design teams. You help designers and writers 
+  create clear, on-brand UI copy in English and Arabic. 
+  You understand HungerStation's tone: friendly, clear, 
+  and culturally relevant for MENA markets. When given a 
+  screenshot, describe what UI elements you see and suggest 
+  copy for them. Always provide suggestions in the language 
+  the user requests (EN or AR). For Arabic, use Gulf dialect 
+  that feels natural for a food delivery app."
+- Send full conversation history with each request for context
+- If image is attached, send as base64 in the API message
+- Language toggle value is appended to each user message:
+  "[Respond in English]" or "[Respond in Arabic]"
+
+## Firestore Data Structure
+Collection: chats/{userId}/conversations/{conversationId}
+- conversationId (auto-generated)
+- title (first user message, truncated to 50 chars)
+- createdAt (timestamp)
+- updatedAt (timestamp)
+
+Sub-collection: chats/{userId}/conversations/{conversationId}/messages/{messageId}
+- role ("user" | "assistant")
+- content (text)
+- imageUrl (optional, string)
+- language ("en" | "ar")
+- createdAt (timestamp)
+
+## Navigation
+- Add "Chat" to the main nav alongside Dashboard
+- Use a chat bubble icon
+- Active state: #222629 black (consistent with design system)
+
+## Empty State
+- New chat empty state:
+  Title: "What are you working on?"
+  Subtitle: "Describe a UI element or paste a screenshot and 
+  Lahjah will suggest copy for it."
+  - Three suggestion chips:
+    "Give me CTA variations"
+    "Review this error message"
+    "Translate this to Arabic"
+
+## After Changes
+- Run npm run build to verify no errors
+- Update CLAUDE.md to reflect new /chat feature
+- Commit and push

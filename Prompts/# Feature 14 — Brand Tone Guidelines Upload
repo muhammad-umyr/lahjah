@@ -1,0 +1,88 @@
+# Feature 14 — Brand Tone Guidelines Upload
+
+## Goal
+Allow designated users to upload HungerStation's brand tone and voice 
+guidelines once, stored centrally, and used as context for ALL copy 
+generation across the app for every user.
+
+## Context
+Currently tone is selected from preset pills (Friendly, Professional, 
+etc.). The brand guidelines document gives the AI deeper context about 
+HungerStation's actual voice, do's and don'ts, terminology, and style 
+so generated copy is more on-brand. This should apply globally, not 
+per request.
+
+## Access Control
+- Only users with an "admin" capability can upload or update the 
+  guidelines
+- For now, since there is no admin role yet, allow any Copy Team 
+  member to upload/update guidelines (they own brand voice)
+- All users (Designers and Copy Team) benefit from the guidelines 
+  automatically during generation
+
+## Where It Lives
+- Add a new page at /guidelines
+- Add a "Guidelines" link in the main navigation (visible to all, 
+  but upload controls only shown to Copy Team)
+
+## Guidelines Page UI
+- Page title: "Brand Tone Guidelines"
+- Subtitle: "These guidelines are used as context for all copy 
+  generated in Lahjah."
+- If guidelines exist:
+  - Show the current guidelines content in a readable format
+  - Show who last updated it and when
+  - Copy Team sees an "Edit guidelines" button
+- If no guidelines exist yet:
+  - Show empty state: "No brand guidelines uploaded yet."
+  - Copy Team sees an "Add guidelines" button
+
+## Upload / Edit Methods
+Support two ways to provide guidelines:
+
+1. PASTE TEXT (primary)
+   - A large textarea where Copy Team can paste/write the brand 
+     voice and tone guidelines directly
+   - Rich enough to hold several paragraphs, do's and don'ts, 
+     terminology notes
+   - "Save guidelines" button (yellow #FFEA00)
+
+2. UPLOAD DOCUMENT (optional)
+   - Allow uploading a PDF or DOCX file with the guidelines
+   - Store the file in Firebase Storage
+   - Extract the text content from the document so it can be used 
+     as AI context
+   - For PDF: extract text server-side
+   - For DOCX: extract text server-side
+   - Show the extracted text in the textarea so it can be reviewed 
+     and edited before saving
+
+## Data Structure
+Store in Firestore at settings/brandGuidelines:
+- content (string — the full guidelines text used as AI context)
+- fileUrl (optional — link to uploaded source document)
+- fileName (optional — original file name)
+- updatedBy (uid)
+- updatedByName (displayName)
+- updatedAt (timestamp)
+
+## Using Guidelines in Generation
+- When generating copy (in /api/generate), fetch the brand guidelines 
+  from settings/brandGuidelines
+- Prepend the guidelines to the system prompt as context, something like:
+  "Follow these HungerStation brand tone and voice guidelines when 
+  generating copy: [guidelines content]"
+- This applies to BOTH the structured request generation AND the 
+  /chat AI assistant
+- If no guidelines exist, generation works as before (no breakage)
+
+## Firestore Rules
+Make sure settings/{document} allows:
+- read: any authenticated user
+- write: any authenticated user (for now, since no admin role yet)
+This is already covered by the existing settings rule.
+
+## After Changes
+- Run npm run build to verify no errors
+- Update CLAUDE.md to reflect the brand guidelines feature
+- Commit and push

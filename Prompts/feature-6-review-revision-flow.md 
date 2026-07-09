@@ -12,6 +12,7 @@ views based on the user's role.
 - in_review → Copy Team has opened the request
 - approved → Copy Team approved all copy strings
 - changes_requested → Copy Team left comments on one or more strings
+- closed → designer closed the request, archived and hidden from dashboard
 
 ## Status Labels (shown in UI)
 - draft → "Draft"
@@ -19,6 +20,7 @@ views based on the user's role.
 - in_review → "In review"
 - approved → "Approved"
 - changes_requested → "Changes requested"
+- closed → "Closed"
 
 ## Designer Flow
 - Designer clicks "Save & Submit for review" on the new request page
@@ -29,8 +31,18 @@ views based on the user's role.
 - If status is "changes_requested":
   - Each copy string that has a comment shows the reviewer's comment 
     in a highlighted yellow box below that string
+  - Designer can add a reply comment to each string that has a 
+    reviewer comment
+    - Reply is saved to Firestore against that annotation
+    - Visible to Copy Team when they re-review the request
   - Designer can update their copy selections per string and resubmit
   - Each resubmission creates a new version in version history
+  - Designer can close the request using a "Close request" button:
+    - Shows confirmation dialog: "Are you sure you want to close 
+      this request? It will be archived and no longer visible in 
+      your active requests."
+    - On confirm: status changes to "closed" in Firestore
+    - Closed requests do not appear in the main dashboard list
 - Designer NEVER sees "Approve" or "Request changes" buttons
 - Designer NEVER sees a "Generate copy" button on the detail page
 
@@ -41,6 +53,8 @@ views based on the user's role.
 - For each copy string, reviewer can:
   - Mark as approved (green checkmark toggle per string)
   - Leave a comment/revision note on that specific string (text input)
+  - See designer's reply comment if one exists (shown below 
+    reviewer's comment)
 - Once done reviewing all strings, reviewer clicks "Submit review"
 - Status logic after submit:
   - If all strings are approved → status changes to "approved"
@@ -48,25 +62,47 @@ views based on the user's role.
 - Designer is notified either way
 - Copy Team NEVER sees "Generate copy" button
 
+## Requester & Assignee Info
+- Every request card in both dashboards shows:
+  - "Raised by: [displayName]" — pulled from users Firestore 
+    collection using createdBy UID
+  - "Assigned to: [displayName]" — the Copy Team member who 
+    last reviewed it (reviewedBy UID), shown as "Unassigned" 
+    if no reviewer yet
+- On the request detail page header, show the same info:
+  - Raised by: [displayName + avatar if available]
+  - Assigned to: [displayName + avatar if available] or "Unassigned"
+- Pull displayName (and photoURL if available) from 
+  users/{uid} in Firestore
+
 ## Role-based Request Detail Page
-The request detail page (/dashboard/[id]) must show different UI based on role:
+The request detail page (/dashboard/[id]) must show different 
+UI based on role:
 
 DESIGNER VIEW:
 - Request title, feature context, tone shown at the top
+- Raised by and Assigned to info in the header
+- Status badge at the top
+- "Close request" button next to status badge
+  (only visible when status is "changes_requested")
+  Background #F4F5F6, text #222629
 - Screenshots displayed as reference (read-only, scrollable)
 - Each annotation shown as an individual card:
   - Annotation label + type badge
   - Selected EN copy (LTR, read-only)
   - Selected AR copy (RTL, dir="rtl", read-only)
-  - If status is "changes_requested" and string has a comment:
-    show reviewer's comment in a #FFEA00 highlighted box
-    and allow designer to update their selection for that string
-- Status badge at the top
-- Resubmit button (only if status is "changes_requested")
+  - If status is "changes_requested" and string has a reviewer comment:
+    - Show reviewer's comment in a #FFEA00 highlighted box
+    - Reply comment input below the reviewer's comment:
+      Placeholder: "Add a comment or note for the reviewer..."
+      Send button: #FFEA00 background, #222629 text
+    - Allow designer to update their copy selection for that string
+- Resubmit button at the bottom (only if status is "changes_requested")
 - No generate, approve, or submit review buttons
 
 COPY TEAM VIEW:
 - Request title, feature context, tone shown at the top
+- Raised by and Assigned to info in the header
 - Screenshots displayed as reference (read-only, scrollable)
 - Each annotation shown as an individual card containing:
   - Annotation label + type badge
@@ -74,7 +110,9 @@ COPY TEAM VIEW:
   - Designer's selected AR copy (RTL, dir="rtl")
   - Approve toggle (green checkmark) per string
   - Comment field per string (text input, optional)
-- "Submit review" button at the bottom 
+  - Designer's reply comment shown below reviewer comment 
+    (read-only, if exists)
+- "Submit review" button at the bottom
   (primary CTA: #FFEA00 background, #222629 text)
 - No "Approve all", "Request changes", or "Generate copy" buttons
 
@@ -84,17 +122,20 @@ COPY TEAM VIEW:
   - "Your request [title] has been approved"
   - "Your request [title] needs changes"
   - "New request [title] submitted for review" (for Copy Team)
+  - "[title] has been resubmitted and is ready for review" 
+    (for Copy Team when designer resubmits)
 - Notifications stored in Firestore under notifications/{userId}
 - Mark as read when clicked
 
 ## Data Structure
 Request document updates:
 - status (updated throughout flow)
+- createdBy (Designer user ID)
 - reviewedBy (Copy Team user ID)
 - reviewedAt (timestamp)
 - selectedCopy (Designer's selected copy per annotation)
-- stringReviews: array of { annotationId, approved, comment } 
-  (per-string review data from Copy Team)
+- stringReviews: array of { annotationId, approved, comment, 
+  designerReply } (per-string review data)
 - versionHistory (array of previous submissions)
 
 ## UI
@@ -104,6 +145,14 @@ Request document updates:
   - in_review → blue background, white text
   - approved → green background, white text
   - changes_requested → red background, white text
+  - closed → #F4F5F6 background, #222629 text
 - Reviewer comments shown in #FFEA00 highlighted box per string
+- Designer reply shown below reviewer comment in subtle gray box
 - Notification bell icon in nav with unread count badge
+- Raised by / Assigned to shown on both dashboard cards and 
+  detail page header
 - Mobile friendly
+- If a string has a designer reply, Copy Team can respond back 
+  with another comment on that string
+  - Show designer reply and a "Respond" input field below it
+  - Send button: #FFEA00 background, #222629 text
