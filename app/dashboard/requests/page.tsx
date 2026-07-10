@@ -210,7 +210,7 @@ export default function SharedRequestsPage() {
               </thead>
               <tbody>
                 {sortedRequests.map((req) => {
-                  const cfg = STATUS_CONFIG[req.status];
+                  const cfg = STATUS_CONFIG[req.status] ?? STATUS_CONFIG.draft;
                   return (
                     <tr
                       key={req.id}
