@@ -40,7 +40,13 @@ export default function DashboardNav() {
           href="/dashboard"
           className="text-sm font-medium text-gray-600 hover:text-ink transition-colors"
         >
-          Requests
+          My requests
+        </Link>
+        <Link
+          href="/dashboard/requests"
+          className="text-sm font-medium text-gray-600 hover:text-ink transition-colors"
+        >
+          All requests
         </Link>
         <Link
           href="/chat"
