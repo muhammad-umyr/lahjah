@@ -1,0 +1,63 @@
+# Feature 15 — Shared Requests Dashboard
+
+## Goal
+Give every Lahjah user (regardless of role) visibility into all copy requests
+raised by designers. Currently a request raised by a designer is only really
+visible to the assigned content writer. This feature adds a shared, org-wide
+dashboard that lists every request so anyone with an account can see what's in
+flight, who raised it, and where it stands — while keeping actions
+(approve / edit / review) restricted to the appropriate roles.
+
+## How it works
+- A new dashboard page accessible from the nav to any authenticated user
+- On load, fetch all requests from Firestore (not filtered by assignee or owner)
+- Display them in a sortable, filterable table
+- Everyone can view the table and click into a request's detail page
+- The detail page remains read-only for users whose role doesn't permit action;
+  action controls (approve, edit, submit review) stay gated by existing role logic
+- No new permissions are granted to any role by this feature — it only widens
+  *visibility*, not *authority*
+- If there are no requests, show a friendly empty state
+
+## Data Structure
+No new Firestore collection is required — this reads the existing requests
+collection. Each row in the table needs, at minimum:
+- `requestNumber` — the request's human-readable ID / number
+- `domain` — the domain name the request relates to
+- `raisedBy` — the designer who raised it (resolve uid → display name via
+  `lib/roles.ts` `getUserDisplayName(uid)`, consistent with existing pages)
+- `status` — current status (e.g. pending, in review, approved, revision)
+- `createdAt` — timestamp (used for default sort and the "date raised" column)
+
+If any of these fields are not currently stored on a request document, note that
+during implementation and confirm before adding new writes — the goal is to read
+what already exists wherever possible.
+
+## UI
+- New standalone page (e.g. `/dashboard/requests` or `/dashboard/all-requests`)
+- Linked from the main nav (`components/DashboardNav.tsx`) for all roles
+- A table with columns: Request #, Domain, Raised by, Status, Date raised
+- Column headers are clickable to sort (ascending / descending)
+- A filter control for status (e.g. dropdown or chips: All / Pending / In review /
+  Approved / Revision)
+- Optional text filter to search by domain or requester name
+- Each row is clickable and links to the existing request detail page
+- Status shown as a colored badge for quick scanning
+- Default sort: newest first by `createdAt`, but user can re-sort any column
+- Responsive layout; table should remain readable on smaller screens
+- Loading state while requests are being fetched
+- Empty state when there are no requests
+- Brand color #FFEA00 for primary actions / active filter state
+- Secondary actions #F4F5F6 with #222629 text
+
+## Important Rules for Claude Code
+- Always use TypeScript
+- Always use Tailwind for styling — no inline styles
+- Store all data in Firestore, files in Firebase Storage
+- API keys are in .env.local — never hardcode them
+- Arabic text must always have dir="rtl" and text-right alignment
+- Reuse `getUserDisplayName` from `lib/roles.ts` for showing the requester name
+- Do NOT change any role/permission logic — this feature is view-only visibility;
+  existing action gating must remain exactly as-is
+- After the feature, run `npm run build` to check for errors before committing
+- Commit and push to GitHub after the completed feature

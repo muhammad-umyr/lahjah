@@ -126,6 +126,10 @@ export async function POST(req: NextRequest) {
               controller.enqueue(encoder.encode(chunk.delta.text));
             }
           }
+        } catch (err: unknown) {
+          const errMsg = err instanceof Error ? err.message : String(err);
+          console.error("[/api/chat] Stream error:", errMsg);
+          controller.error(new Error(`Stream error: ${errMsg}`));
         } finally {
           controller.close();
         }
@@ -136,8 +140,23 @@ export async function POST(req: NextRequest) {
       headers: { "Content-Type": "text/plain; charset=utf-8" },
     });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error("[/api/chat] Error:", message);
-    return NextResponse.json({ error: `Chat failed: ${message}` }, { status: 500 });
+    let statusCode = 500;
+    let errorMsg = "Unknown error";
+
+    if (err instanceof Error) {
+      errorMsg = err.message;
+      // Anthropic SDK errors often have a status property
+      if ("status" in err && typeof (err as any).status === "number") {
+        statusCode = (err as any).status;
+      }
+    } else {
+      errorMsg = String(err);
+    }
+
+    console.error(`[/api/chat] API Error (${statusCode}):`, errorMsg);
+    return NextResponse.json(
+      { error: `Chat failed: ${errorMsg}`, status: statusCode },
+      { status: statusCode }
+    );
   }
 }

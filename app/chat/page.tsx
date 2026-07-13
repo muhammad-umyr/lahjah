@@ -381,7 +381,21 @@ export default function ChatPage() {
         body: JSON.stringify({ messages: history, language }),
       });
 
-      if (!res.ok || !res.body) throw new Error("Chat API error");
+      if (!res.ok) {
+        let errorMsg = `API error (${res.status})`;
+        try {
+          const errorData = await res.json() as { error?: string };
+          if (errorData.error) {
+            errorMsg = errorData.error;
+          }
+        } catch {
+          // If response isn't JSON, use the status text
+          errorMsg = res.statusText || errorMsg;
+        }
+        throw new Error(errorMsg);
+      }
+
+      if (!res.body) throw new Error("No response body from server");
 
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
@@ -410,8 +424,11 @@ export default function ChatPage() {
         updatedAt: serverTimestamp(),
       });
     } catch (err) {
-      console.error("[chat] Error:", err);
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      console.error("[chat] Error:", errorMsg);
       setStreamingContent(null);
+      setDropError(`Failed to get response: ${errorMsg}`);
+      setTimeout(() => setDropError(null), 5000);
     } finally {
       setSending(false);
     }
